@@ -1,0 +1,67 @@
+services:
+  order_service:
+    build:
+      context: .
+      dockerfile: ./services/order-service/build/Dockerfile.dev
+    volumes:
+      - .:/app
+    working_dir: /app/services/order-service
+    command: air
+    ports:
+      - "8081:8080"
+  inventory_service:
+    build:
+      context: .
+      dockerfile: ./services/inventory-service/build/Dockerfile.dev
+    volumes:
+      - .:/app
+    working_dir: /app/services/inventory-service
+    command: air
+    ports:
+      - "8082:8080"
+  payment_service:
+    build:
+      context: .
+      dockerfile: ./services/payment-service/build/Dockerfile.dev
+    volumes:
+      - .:/app
+    working_dir: /app/services/payment-service
+    command: air
+    ports:
+      - "8083:8080"
+  postgres:
+    image: postgres:15-alpine
+    container_name: flashcart_postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: secretpassword
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./init-scripts/init_databases.sql:/docker-entrypoint-initdb.d/01_init_databases.sql
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: flashcart_redis
+    ports:
+      - "6379:6379"
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: flashcart_rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+volumes:
+  pgdata:
+

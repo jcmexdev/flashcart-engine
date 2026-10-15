@@ -1,0 +1,30 @@
+# Git & IDEs
+.git/
+.gitignore
+.idea/
+.vscode/
+.DS_Store
+
+# Documentation & Markdown
+README.md
+docs/
+
+# Local database & storage data
+storage/
+pgdata/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Air temporary build directory
+tmp/
+services/**/tmp/
+
+# Binaries & build artifacts
+bin/
+dist/
+*.exe
+*.test
+*.out

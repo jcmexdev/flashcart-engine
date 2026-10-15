@@ -1,0 +1,37 @@
+# Binaries & build artifacts
+bin/
+dist/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Go workspace & vendor
+vendor/
+go.work.sum
+
+# Air live reload temporary files
+tmp/
+services/**/tmp/
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+
+# IDEs & editors
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Logs & database data
+*.log
+storage/
+pgdata/
