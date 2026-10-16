@@ -2,12 +2,15 @@ package postgres
 
 import (
 	"context"
+	"time"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jcmexdev/flashcart-engine/services/order/internal/apperror"
 	"github.com/jcmexdev/flashcart-engine/services/order/internal/domain"
 	"github.com/jcmexdev/flashcart-engine/services/order/internal/ports"
 )
+
 
 type outboxRepository struct {
 	tx pgx.Tx
@@ -42,3 +45,66 @@ func (r *outboxRepository) Save(ctx context.Context, event *domain.OutboxEvent) 
 
 	return nil
 }
+
+// LockUnprocessed queries unprocessed outbox events with FOR UPDATE SKIP LOCKED up to the given limit.
+func (r *outboxRepository) LockUnprocessed(ctx context.Context, limit int) ([]*domain.OutboxEvent, error) {
+	const query = `
+		SELECT id, aggregate_type, aggregate_id, event_type, payload, processed, created_at, processed_at
+		FROM outbox_events
+		WHERE processed = FALSE
+		ORDER BY created_at ASC
+		LIMIT $1
+		FOR UPDATE SKIP LOCKED
+	`
+
+	rows, err := r.tx.Query(ctx, query, limit)
+	if err != nil {
+		return nil, apperror.NewInternal("failed to query unprocessed outbox events", err)
+	}
+	defer rows.Close()
+
+	var events []*domain.OutboxEvent
+	for rows.Next() {
+		var ev domain.OutboxEvent
+		if err := rows.Scan(
+			&ev.ID,
+			&ev.AggregateType,
+			&ev.AggregateID,
+			&ev.EventType,
+			&ev.Payload,
+			&ev.Processed,
+			&ev.CreatedAt,
+			&ev.ProcessedAt,
+		); err != nil {
+			return nil, apperror.NewInternal("failed to scan outbox event", err)
+		}
+		events = append(events, &ev)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, apperror.NewInternal("error iterating outbox events", err)
+	}
+
+	return events, nil
+}
+
+// MarkAsProcessed updates the status of the specified events to processed.
+func (r *outboxRepository) MarkAsProcessed(ctx context.Context, ids []uuid.UUID, processedAt time.Time) error {
+	if len(ids) == 0 {
+		return nil
+	}
+
+	const query = `
+		UPDATE outbox_events
+		SET processed = TRUE, processed_at = $1
+		WHERE id = ANY($2)
+	`
+
+	_, err := r.tx.Exec(ctx, query, processedAt, ids)
+	if err != nil {
+		return apperror.NewInternal("failed to mark outbox events as processed", err)
+	}
+
+	return nil
+}
+

@@ -16,6 +16,9 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      rabbitmq:
+        condition: service_started
+
 
   inventory_service:
     build:
