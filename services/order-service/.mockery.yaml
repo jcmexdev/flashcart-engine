@@ -1,0 +1,17 @@
+with-expecter: true
+dir: "internal/mocks"
+outpkg: "mocks"
+mockname: "Mock{{.InterfaceName}}"
+filename: "mock_{{.InterfaceNameLower}}.go"
+issue-845-fix: true
+disable-version-string: true
+resolve-type-alias: false
+
+packages:
+  github.com/jcmexdev/flashcart-engine/services/order/internal/ports:
+    interfaces:
+      OrderRepository:
+      OutboxRepository:
+      UnitOfWork:
+      UnitOfWorkManager:
+      CreateOrderUseCase:
